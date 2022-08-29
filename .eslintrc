@@ -8,5 +8,7 @@
     "plugin:@typescript-eslint/recommended",
     "prettier"
   ],
-  "rules": {}
+  "rules": {
+    "@typescript-eslint/no-var-requires": 0,
+  }
 }

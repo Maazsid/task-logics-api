@@ -32,7 +32,7 @@ model Task {
   description String?
   startTime   DateTime  @map("start_time") @db.Timestamptz(3)
   endTime     DateTime? @map("end_time") @db.Timestamptz(3)
-  isDeleted   Boolean   @map("is_deleted")
+  isDeleted   Boolean   @default(false) @map("is_deleted")
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 

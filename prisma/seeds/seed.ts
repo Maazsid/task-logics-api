@@ -34,6 +34,19 @@ const main = async () => {
       }
     ]
   });
+
+  await prisma.rolePermission.deleteMany({});
+
+  await prisma.$queryRaw`ALTER SEQUENCE role_permissions_id_seq RESTART WITH 1`;
+
+  await prisma.rolePermission.createMany({
+    data: [
+      {
+        roleId: 1,
+        permissionId: 1
+      }
+    ]
+  });
 };
 
 main()
@@ -41,7 +54,7 @@ main()
     console.error('Seeding completed successfully!');
     await prisma.$disconnect();
   })
-  .catch(async (e) => {
+  .catch(async () => {
     await prisma.$disconnect();
     process.exit(1);
   });

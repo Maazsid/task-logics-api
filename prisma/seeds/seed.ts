@@ -1,10 +1,12 @@
 import { PrismaClient } from '@prisma/client';
-import { Role } from '../constants/roles';
+import { Role } from '../../src/constants/roles';
 
 const prisma = new PrismaClient();
 
 const main = async () => {
   await prisma.role.deleteMany({});
+
+  await prisma.$queryRaw`ALTER SEQUENCE roles_id_seq RESTART WITH 1;`;
 
   await prisma.role.createMany({
     data: [
@@ -16,7 +18,22 @@ const main = async () => {
       }
     ]
   });
-  return;
+
+  await prisma.permission.deleteMany({});
+
+  await prisma.$queryRaw`ALTER SEQUENCE permissions_id_seq RESTART WITH 1`;
+
+  await prisma.permission.createMany({
+    data: [
+      {
+        resource: 'User',
+        canCreate: true,
+        canRead: true,
+        canUpdate: true,
+        canDelete: true
+      }
+    ]
+  });
 };
 
 main()

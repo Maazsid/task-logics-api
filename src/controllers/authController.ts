@@ -1,6 +1,25 @@
-import { NextFunction, Request, Response } from 'express';
 import { asyncHandler } from '../middlewares/asyncHandler';
+import { registerValidator } from '../validators/auth.validator';
 
-export const register = asyncHandler((req: Request, res: Response, next: NextFunction) => {
-  next();
+export const registerController = asyncHandler(async (req, res, next) => {
+  const body = req.body;
+
+  try {
+    await registerValidator.validateAsync(body, {
+      errors: {
+        wrap: {
+          label: false
+        }
+      }
+    });
+  } catch (err: any) {
+    err.isOperational = true;
+    next(err);
+    return;
+  }
+
+  res.status(200).json({
+    success: true,
+    data: {}
+  });
 });

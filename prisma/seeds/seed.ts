@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import { Role } from '../../src/constants/roles';
+import { RoleEnum } from '../constants/rolesEnum';
+
 
 const prisma = new PrismaClient();
 
@@ -11,10 +12,10 @@ const main = async () => {
   await prisma.role.createMany({
     data: [
       {
-        roleName: Role.User
+        roleName: RoleEnum.User
       },
       {
-        roleName: Role.Admin
+        roleName: RoleEnum.Admin
       }
     ]
   });

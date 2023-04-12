@@ -66,13 +66,13 @@ export const sendOTPToUser = async (user: User) => {
   });
 
   if (userOtp) {
-    const isOTPAttemptLimitReached = userOtp.otpAttempt + 1 === 5;
-    let lockoutDateUTC: string | null = null;
+    const isOTPRequestLimitReached = userOtp.otpRequest + 1 === 100;
+    let otpRequestTimeoutDateUTC: string | null = null;
 
-    if (isOTPAttemptLimitReached) {
-      const lockoutTime = Date.now() + 60 * 60 * 1000;
-      const lockoutDate = new Date(lockoutTime);
-      lockoutDateUTC = lockoutDate.toISOString();
+    if (isOTPRequestLimitReached) {
+      const otpReqTimeout = Date.now() + 60 * 60 * 1000;
+      const otpReqTimeoutDate = new Date(otpReqTimeout);
+      otpRequestTimeoutDateUTC = otpReqTimeoutDate.toISOString();
     }
 
     await prisma.userOtp.update({
@@ -82,8 +82,8 @@ export const sendOTPToUser = async (user: User) => {
       data: {
         otp: otp,
         expiryDate: expiryDateUTC,
-        otpAttempt: userOtp.otpAttempt + 1,
-        lockoutDate: lockoutDateUTC
+        otpRequest: userOtp.otpRequest + 1,
+        otpRequestTimeoutDate: otpRequestTimeoutDateUTC
       }
     });
   }
@@ -93,15 +93,15 @@ export const sendOTPToUser = async (user: User) => {
       userId: user.id,
       otp: otp,
       expiryDate: expiryDateUTC,
-      otpAttempt: 1
+      otpRequest: 1
     }
   });
 
   await sendEmail(user, otp);
 };
 
-export const generateResendOTPToken = (user: User): string => {
-  const token = jwt.sign({ userId: user.id }, process.env.RESEND_OTP_SECRET as string, {
+export const generateOTPToken = (user: User): string => {
+  const token = jwt.sign({ userId: user.id }, process.env.OTP_TOKEN_SECRET as string, {
     expiresIn: 15 * 60
   });
 
@@ -121,7 +121,7 @@ const sendEmail = async (user: User, otp: string) => {
 
   const emailMessage: MailDataRequired = {
     from: 'maaz.d.sid@gmail.com',
-    templateId: 'd-2c91af0e370e49ef94b09a37dbfdabb5',
+    templateId: process.env.SENDGRID_OTP_TEMPlATE_ID as string,
     personalizations: [
       {
         to: user?.email,

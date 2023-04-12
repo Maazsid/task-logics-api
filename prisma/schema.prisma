@@ -45,15 +45,17 @@ model Task {
 // Session and Token Tables
 
 model UserOtp {
-  id          Int       @id @default(autoincrement())
-  user        User      @relation(fields: [userId], references: [id])
-  userId      Int       @unique @map("user_id")
-  otp         String
-  otpAttempt  Int       @map("otp_attempt")
-  lockoutDate DateTime? @map("lockout_date") @db.Timestamp()
-  expiryDate  DateTime  @map("expiry_date") @db.Timestamp()
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp()
-  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamp()
+  id                    Int       @id @default(autoincrement())
+  user                  User      @relation(fields: [userId], references: [id])
+  userId                Int       @unique @map("user_id")
+  otp                   String
+  otpRequest            Int       @map("otp_request")
+  otpAttempt            Int?      @map("otp_attempt")
+  otpRequestTimeoutDate DateTime? @map("otp_request_timeout_date") @db.Timestamp()
+  lockoutDate           DateTime? @map("lockout_date") @db.Timestamp()
+  expiryDate            DateTime  @map("expiry_date") @db.Timestamp()
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamp()
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamp()
 
   @@map("user_otp")
 }

@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { RoleEnum } from '../constants/rolesEnum';
+import { RoleEnum } from '../../src/constants/rolesEnum';
 
 
 const prisma = new PrismaClient();

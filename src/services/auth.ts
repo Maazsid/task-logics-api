@@ -2,7 +2,7 @@ import { RegistrationReq } from '../interfaces/auth/registrationReq.model';
 import { BcryptEnum } from '../constants/bcryptEnum';
 import { RoleEnum } from '../constants/rolesEnum';
 import { Role, User } from '@prisma/client';
-import prisma from '../utils/client';
+import prisma from '../utils/db/client';
 import { Request } from 'express';
 import bcrypt from 'bcrypt';
 import otpGenerator from 'otp-generator';
@@ -70,7 +70,7 @@ export const sendOTPToUser = async (user: User) => {
     let otpRequestTimeoutDateUTC: string | null = null;
 
     if (isOTPRequestLimitReached) {
-      const otpReqTimeout = Date.now() + 60 * 60 * 1000;
+      const otpReqTimeout = Date.now() + 24 * 60 * 60 * 1000;
       const otpReqTimeoutDate = new Date(otpReqTimeout);
       otpRequestTimeoutDateUTC = otpReqTimeoutDate.toISOString();
     }
@@ -86,16 +86,16 @@ export const sendOTPToUser = async (user: User) => {
         otpRequestTimeoutDate: otpRequestTimeoutDateUTC
       }
     });
+  } else {
+    await prisma.userOtp.create({
+      data: {
+        userId: user.id,
+        otp: otp,
+        expiryDate: expiryDateUTC,
+        otpRequest: 1
+      }
+    });
   }
-
-  await prisma.userOtp.create({
-    data: {
-      userId: user.id,
-      otp: otp,
-      expiryDate: expiryDateUTC,
-      otpRequest: 1
-    }
-  });
 
   await sendEmail(user, otp);
 };

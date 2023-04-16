@@ -6,6 +6,6 @@ export const errorHandler: ErrorRequestHandler = async (err, req, res, next) => 
 
   res.status(err?.statusCode || 500).json({
     success: false,
-    error: err?.message || 'Something went wrong.'
+    error: 'Something went wrong.'
   });
 };

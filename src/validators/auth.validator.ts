@@ -1,4 +1,5 @@
 import Joi from 'joi';
+import { VerificationTypeEnum } from '../constants/authEnum';
 
 /* 
   Password Validation
@@ -16,4 +17,9 @@ export const registerValidator = Joi.object({
   lastName: Joi.string().min(3).max(100).required(),
   password: Joi.string().required().pattern(passwordRegex),
   email: Joi.string().email().required()
+});
+
+export const otpValidator = Joi.object({
+  otp: Joi.string().required(),
+  verificationType : Joi.string().required().valid(...Object.values(VerificationTypeEnum))
 });

@@ -65,6 +65,7 @@ model UserSession {
   user         User     @relation(fields: [userId], references: [id])
   userId       Int      @map("user_id")
   refreshToken String   @map("refresh_token")
+  isRevoked    Boolean  @map("is_revoked")
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp()
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamp()
 

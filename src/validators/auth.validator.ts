@@ -12,14 +12,21 @@ import { VerificationTypeEnum } from '../constants/authEnum';
 
 const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
 
+export const loginValidator = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string().required().pattern(passwordRegex)
+});
+
 export const registerValidator = Joi.object({
   firstName: Joi.string().min(3).max(100).required(),
   lastName: Joi.string().min(3).max(100).required(),
-  password: Joi.string().required().pattern(passwordRegex),
-  email: Joi.string().email().required()
+  email: Joi.string().email().required(),
+  password: Joi.string().required().pattern(passwordRegex)
 });
 
 export const otpValidator = Joi.object({
   otp: Joi.string().required(),
-  verificationType : Joi.string().required().valid(...Object.values(VerificationTypeEnum))
+  verificationType: Joi.string()
+    .required()
+    .valid(...Object.values(VerificationTypeEnum))
 });

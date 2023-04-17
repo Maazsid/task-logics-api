@@ -1,9 +1,63 @@
 import { RegistrationReq } from '../interfaces/auth/registrationReq.model';
 import { asyncHandler } from '../middlewares/asyncHandler';
-import { generateOTPToken, isUserExist, registerUser, sendOTPToUser } from '../services/auth';
-import { registerValidator } from '../validators/auth.validator';
+import { canLoginUser, generateOTPToken, isUserExist, registerUser, sendOTPToUser } from '../services/auth';
+import { loginValidator, registerValidator } from '../validators/auth.validator';
 import passport from 'passport';
 import { VerificationTypeEnum } from '../constants/authEnum';
+import { LoginReq } from '../interfaces/auth/loginReq.model';
+
+export const loginController = asyncHandler(async (req, res) => {
+  req.body = {
+    ...req.body,
+    email: req.body?.email?.trim()
+  };
+
+  const body: LoginReq = req.body;
+
+  try {
+    await loginValidator.validateAsync(body, {
+      errors: {
+        wrap: {
+          label: false
+        }
+      }
+    });
+  } catch (err: any) {
+    res.status(400).json({
+      success: false,
+      error: err?.message || 'Something went wrong.'
+    });
+
+    return;
+  }
+
+  const { areCredentialsCorrect, user } = await canLoginUser(body);
+
+  if (!areCredentialsCorrect) {
+    res.status(400).json({
+      success: false,
+      error: 'Incorrect credentials.'
+    });
+
+    return;
+  }
+
+  if (user) {
+    await sendOTPToUser(user);
+
+    const otpJwtToken = generateOTPToken(user);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        message: '',
+        result: {
+          otpToken: otpJwtToken
+        }
+      }
+    });
+  }
+});
 
 export const registerController = asyncHandler(async (req, res) => {
   req.body = {

@@ -9,6 +9,25 @@ import otpGenerator from 'otp-generator';
 import sendgrid from '@sendgrid/mail';
 import { MailDataRequired } from '@sendgrid/helpers/classes/mail';
 import jwt from 'jsonwebtoken';
+import { LoginReq } from '../interfaces/auth/loginReq.model';
+
+export const canLoginUser = async (
+  body: LoginReq
+): Promise<{ areCredentialsCorrect: boolean; user?: User }> => {
+  const user = await prisma.user.findUnique({
+    where: {
+      email: body.email
+    }
+  });
+
+  if (!user) return { areCredentialsCorrect: false };
+
+  const isPasswordMatched = await bcrypt.compare(body?.password, user?.password);
+
+  if (!isPasswordMatched) return { areCredentialsCorrect: false };
+
+  return { areCredentialsCorrect: true, user };
+};
 
 export const registerUser = async (req: Request): Promise<User> => {
   const body: RegistrationReq = req?.body;

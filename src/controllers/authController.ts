@@ -1,10 +1,19 @@
 import { RegistrationReq } from '../interfaces/auth/registrationReq.model';
 import { asyncHandler } from '../middlewares/asyncHandler';
-import { canLoginUser, generateOTPToken, isUserExist, registerUser, sendOTPToUser } from '../services/auth';
+import {
+  canLoginUser,
+  generateOTPToken,
+  getUserById,
+  isOTPRequestTimeoutLimitReached,
+  isUserExist,
+  registerUser,
+  sendOTPToUser
+} from '../services/auth';
 import { loginValidator, registerValidator } from '../validators/auth.validator';
 import passport from 'passport';
 import { VerificationTypeEnum } from '../constants/authEnum';
 import { LoginReq } from '../interfaces/auth/loginReq.model';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 
 export const loginController = asyncHandler(async (req, res) => {
   req.body = {
@@ -43,6 +52,17 @@ export const loginController = asyncHandler(async (req, res) => {
   }
 
   if (user) {
+    const { isOTPRequestLimitReached, message } = await isOTPRequestTimeoutLimitReached(user);
+
+    if (isOTPRequestLimitReached) {
+      res.status(400).json({
+        success: false,
+        message
+      });
+
+      return;
+    }
+
     await sendOTPToUser(user);
 
     const otpJwtToken = generateOTPToken(user);
@@ -164,6 +184,38 @@ export const verifyOTPController = asyncHandler(async (req, res, next) => {
       next(err);
     }
   })(req, res, next);
+});
+
+export const resendOTPController = asyncHandler(async (req, res) => {
+  const otpJwtToken = req?.headers?.authorization?.split(' ')?.[1];
+
+  if (!otpJwtToken) {
+    throw new Error('Something went wrong.');
+  }
+
+  const decodedToken = jwt.verify(otpJwtToken, process.env.OTP_TOKEN_SECRET as string) as JwtPayload;
+
+  const userId = decodedToken?.userId as any as number;
+
+  const user = await getUserById(userId);
+
+  const { isOTPRequestLimitReached, message } = await isOTPRequestTimeoutLimitReached(user);
+
+  if (isOTPRequestLimitReached) {
+    res.status(400).json({
+      success: false,
+      message
+    });
+
+    return;
+  }
+
+  await sendOTPToUser(user);
+
+  res.status(200).json({
+    success: true,
+    message: 'OTP sent successfully!'
+  });
 });
 
 type OtpError = { isAuthenticationError: boolean; message: string };

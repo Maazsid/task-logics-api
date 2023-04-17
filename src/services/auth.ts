@@ -72,6 +72,43 @@ export const isUserExist = async (req: Request): Promise<boolean> => {
   return false;
 };
 
+export const isOTPRequestTimeoutLimitReached = async (
+  user: User
+): Promise<{ isOTPRequestLimitReached: boolean; message: string }> => {
+  const userOtp = await prisma.userOtp.findFirst({
+    where: {
+      userId: user?.id
+    }
+  });
+
+  if (!userOtp) return { isOTPRequestLimitReached: false, message: '' };
+
+  const isOtpRequestTimedout = userOtp?.otpRequest === 100;
+  const isOtpTimeoutRemaining =
+    new Date(userOtp?.otpRequestTimeoutDate || '').getTime() > new Date().getTime();
+
+  if (isOtpRequestTimedout && isOtpTimeoutRemaining) {
+    const currentDate = new Date().getTime();
+    const otpTimeoutDate = new Date(userOtp.otpRequestTimeoutDate || '').getTime();
+    const remainingTime = Math.ceil((otpTimeoutDate - currentDate) / 1000 / 60 / 60);
+    const message = `OTP request limit reached, time remaining: ${remainingTime} hours`;
+
+    return { isOTPRequestLimitReached: true, message };
+  } else if (isOtpRequestTimedout && !isOtpTimeoutRemaining) {
+    await prisma.userOtp.update({
+      where: {
+        userId: user?.id
+      },
+      data: {
+        otpRequest: 0,
+        otpRequestTimeoutDate: null
+      }
+    });
+  }
+
+  return { isOTPRequestLimitReached: false, message: '' };
+};
+
 export const sendOTPToUser = async (user: User) => {
   const otp = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
   const expiryTime = Date.now() + 5 * 60 * 1000;
@@ -125,6 +162,18 @@ export const generateOTPToken = (user: User): string => {
   });
 
   return token;
+};
+
+export const getUserById = async (userId: number): Promise<User> => {
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId
+    }
+  });
+
+  if (!user) throw new Error('Something went wrong.');
+
+  return user;
 };
 
 const sendEmail = async (user: User, otp: string) => {

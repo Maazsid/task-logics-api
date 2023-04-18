@@ -3,17 +3,19 @@ import { asyncHandler } from '../middlewares/asyncHandler';
 import {
   canLoginUser,
   generateOTPToken,
+  getUserByEmail,
   getUserById,
   isOTPRequestTimeoutLimitReached,
   isUserExist,
   registerUser,
   sendOTPToUser
 } from '../services/auth';
-import { loginValidator, registerValidator } from '../validators/auth.validator';
+import { forgotPasswordValidator, loginValidator, registerValidator } from '../validators/auth.validator';
 import passport from 'passport';
 import { VerificationTypeEnum } from '../constants/authEnum';
 import { LoginReq } from '../interfaces/auth/loginReq.model';
 import jwt, { JwtPayload } from 'jsonwebtoken';
+import { ForgotPasswordReq } from '../interfaces/auth/forgotPasswordReq.model';
 
 export const loginController = asyncHandler(async (req, res) => {
   req.body = {
@@ -106,7 +108,7 @@ export const registerController = asyncHandler(async (req, res) => {
     return;
   }
 
-  const isUserAlreadyExist = await isUserExist(req);
+  const isUserAlreadyExist = await isUserExist(body?.email);
 
   if (isUserAlreadyExist) {
     res.status(400).json({
@@ -119,7 +121,7 @@ export const registerController = asyncHandler(async (req, res) => {
     return;
   }
 
-  const user = await registerUser(req);
+  const user = await registerUser(body);
 
   await sendOTPToUser(user);
 
@@ -215,6 +217,57 @@ export const resendOTPController = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     message: 'OTP sent successfully!'
+  });
+});
+
+export const forgotPasswordController = asyncHandler(async (req, res) => {
+  req.body = {
+    ...req.body,
+    email: req.body?.email?.trim()
+  };
+
+  const body: ForgotPasswordReq = req.body;
+
+  try {
+    await forgotPasswordValidator.validateAsync(body, {
+      errors: {
+        wrap: {
+          label: false
+        }
+      }
+    });
+  } catch (err: any) {
+    res.status(400).json({
+      success: false,
+      error: err?.message || 'Something went wrong.'
+    });
+
+    return;
+  }
+
+  const user = await getUserByEmail(body?.email);
+
+  if (!user) {
+    res.status(400).json({
+      success: false,
+      error: 'Incorrect credentials'
+    });
+
+    return;
+  }
+
+  await sendOTPToUser(user);
+
+  const otpJwtToken = generateOTPToken(user);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      message: '',
+      result: {
+        otpToken: otpJwtToken
+      }
+    }
   });
 });
 

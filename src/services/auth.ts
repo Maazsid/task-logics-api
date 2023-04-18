@@ -3,7 +3,6 @@ import { BcryptEnum } from '../constants/bcryptEnum';
 import { RoleEnum } from '../constants/rolesEnum';
 import { Role, User } from '@prisma/client';
 import prisma from '../utils/db/client';
-import { Request } from 'express';
 import bcrypt from 'bcrypt';
 import otpGenerator from 'otp-generator';
 import sendgrid from '@sendgrid/mail';
@@ -29,9 +28,7 @@ export const canLoginUser = async (
   return { areCredentialsCorrect: true, user };
 };
 
-export const registerUser = async (req: Request): Promise<User> => {
-  const body: RegistrationReq = req?.body;
-
+export const registerUser = async (body: RegistrationReq): Promise<User> => {
   const hashedPassword = await bcrypt.hash(body?.password, BcryptEnum.SaltRounds);
 
   const role = (await prisma.role.findFirst({
@@ -59,12 +56,10 @@ export const registerUser = async (req: Request): Promise<User> => {
   return user;
 };
 
-export const isUserExist = async (req: Request): Promise<boolean> => {
-  const body: RegistrationReq = req.body;
-
+export const isUserExist = async (email: string): Promise<boolean> => {
   const user = await prisma.user.findUnique({
     where: {
-      email: body.email
+      email: email
     }
   });
 
@@ -153,7 +148,7 @@ export const sendOTPToUser = async (user: User) => {
     });
   }
 
-  await sendEmail(user, otp);
+  // await sendEmail(user, otp);
 };
 
 export const generateOTPToken = (user: User): string => {
@@ -172,6 +167,16 @@ export const getUserById = async (userId: number): Promise<User> => {
   });
 
   if (!user) throw new Error('Something went wrong.');
+
+  return user;
+};
+
+export const getUserByEmail = async (email: string): Promise<User | null> => {
+  const user = await prisma.user.findUnique({
+    where: {
+      email
+    }
+  });
 
   return user;
 };

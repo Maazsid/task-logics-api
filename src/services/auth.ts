@@ -7,8 +7,9 @@ import bcrypt from 'bcrypt';
 import otpGenerator from 'otp-generator';
 import sendgrid from '@sendgrid/mail';
 import { MailDataRequired } from '@sendgrid/helpers/classes/mail';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import { LoginReq } from '../interfaces/auth/loginReq.model';
+import { ResetPasswordReq } from '../interfaces/auth/resetPasswordReq.model';
 
 export const canLoginUser = async (
   body: LoginReq
@@ -54,6 +55,30 @@ export const registerUser = async (body: RegistrationReq): Promise<User> => {
   });
 
   return user;
+};
+
+export const resetPassword = async (body: ResetPasswordReq, resetPasswordJwtToken: string | undefined) => {
+  if (!resetPasswordJwtToken) {
+    throw new Error('Something went wrong.');
+  }
+
+  const decodedToken = jwt.verify(
+    resetPasswordJwtToken,
+    process.env.RESET_PASSWORD_TOKEN_SECRET as string
+  ) as JwtPayload;
+
+  const userId = decodedToken?.userId as any as number;
+
+  const hashedPassword = await bcrypt.hash(body?.password, BcryptEnum.SaltRounds);
+
+  await prisma.user.update({
+    where: {
+      id: userId
+    },
+    data: {
+      password: hashedPassword
+    }
+  });
 };
 
 export const isUserExist = async (email: string): Promise<boolean> => {
@@ -148,7 +173,7 @@ export const sendOTPToUser = async (user: User) => {
     });
   }
 
-  // await sendEmail(user, otp);
+  await sendEmail(user, otp);
 };
 
 export const generateOTPToken = (user: User): string => {

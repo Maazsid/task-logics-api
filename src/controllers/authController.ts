@@ -8,14 +8,21 @@ import {
   isOTPRequestTimeoutLimitReached,
   isUserExist,
   registerUser,
+  resetPassword,
   sendOTPToUser
 } from '../services/auth';
-import { forgotPasswordValidator, loginValidator, registerValidator } from '../validators/auth.validator';
+import {
+  forgotPasswordValidator,
+  loginValidator,
+  registerValidator,
+  resetPasswordValidator
+} from '../validators/auth.validator';
 import passport from 'passport';
 import { VerificationTypeEnum } from '../constants/authEnum';
 import { LoginReq } from '../interfaces/auth/loginReq.model';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { ForgotPasswordReq } from '../interfaces/auth/forgotPasswordReq.model';
+import { ResetPasswordReq } from '../interfaces/auth/resetPasswordReq.model';
 
 export const loginController = asyncHandler(async (req, res) => {
   req.body = {
@@ -267,6 +274,38 @@ export const forgotPasswordController = asyncHandler(async (req, res) => {
       result: {
         otpToken: otpJwtToken
       }
+    }
+  });
+});
+
+export const resetPasswordController = asyncHandler(async (req, res) => {
+  const body: ResetPasswordReq = req.body;
+
+  try {
+    await resetPasswordValidator.validateAsync(body, {
+      errors: {
+        wrap: {
+          label: false
+        }
+      }
+    });
+  } catch (err: any) {
+    res.status(400).json({
+      success: false,
+      error: err?.message || 'Something went wrong.'
+    });
+
+    return;
+  }
+
+  const resetPasswordJwtToken = req?.headers?.authorization?.split(' ')?.[1];
+
+  await resetPassword(body, resetPasswordJwtToken);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      message: 'Password reset successfully!'
     }
   });
 });

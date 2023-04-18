@@ -28,6 +28,10 @@ export const forgotPasswordValidator = Joi.object({
   email: Joi.string().email().required()
 });
 
+export const resetPasswordValidator = Joi.object({
+  password: Joi.string().required().pattern(passwordRegex)
+});
+
 export const otpValidator = Joi.object({
   otp: Joi.string().required(),
   verificationType: Joi.string()

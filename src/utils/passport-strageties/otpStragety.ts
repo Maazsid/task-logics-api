@@ -4,6 +4,7 @@ import { VerifyOtpReq } from '../../interfaces/auth/verifyOtpReq.model';
 import prisma from '../db/client';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { VerificationTypeEnum } from '../../constants/authEnum';
+import { generateUserAccessToken, generateUserRefreshToken } from '../../services/auth';
 
 export const otpStragety = new Strategy(
   { usernameField: 'otp', passwordField: 'otp', passReqToCallback: true },
@@ -145,68 +146,6 @@ export const otpStragety = new Strategy(
     }
   }
 );
-
-const generateUserAccessToken = async (userId: number): Promise<string> => {
-  const userRoles = await prisma.userRole.findMany({
-    where: {
-      userId
-    },
-    select: {
-      roleId: true
-    }
-  });
-
-  const userRolesIds = userRoles?.map((userRole) => userRole?.roleId);
-
-  const rolePermissions = await prisma.rolePermission.findMany({
-    where: {
-      roleId: {
-        in: userRolesIds
-      }
-    },
-    include: {
-      permission: true
-    }
-  });
-
-  const userPermissions = rolePermissions?.map((rolePermission) => {
-    const { permission } = rolePermission || {};
-    const { resource, canCreate, canRead, canUpdate, canDelete } = permission || {};
-    return {
-      resource,
-      canCreate,
-      canRead,
-      canUpdate,
-      canDelete
-    };
-  });
-
-  const accessToken = jwt.sign(
-    { userId: userId, permissions: userPermissions },
-    process.env.ACCESS_TOKEN_SECRET as string,
-    {
-      expiresIn: 15 * 60
-    }
-  );
-
-  return accessToken;
-};
-
-const generateUserRefreshToken = async (userId: number): Promise<string> => {
-  const refreshToken = jwt.sign({ userId: userId }, process.env.REFRESH_TOKEN_SECRET as string, {
-    expiresIn: 30 * 24 * 60 * 60
-  });
-
-  await prisma.userSession.create({
-    data: {
-      userId: userId,
-      refreshToken: refreshToken,
-      isRevoked: false
-    }
-  });
-
-  return refreshToken;
-};
 
 declare module 'jsonwebtoken' {
   export interface JwtPayload {

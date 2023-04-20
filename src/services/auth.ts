@@ -176,6 +176,33 @@ export const sendOTPToUser = async (user: User) => {
   await sendEmail(user, otp);
 };
 
+export const renewRefreshToken = async (userId: number, refreshJwtToken: string): Promise<string | null> => {
+  const userSession = await prisma.userSession.findFirst({
+    where: {
+      userId: userId,
+      refreshToken: refreshJwtToken
+    },
+    select: {
+      id: true,
+      isRevoked: true
+    }
+  });
+
+  if (!userSession) return null;
+
+  if (userSession?.isRevoked) return null;
+
+  const refreshToken = await generateUserRefreshToken(userId);
+
+  await prisma.userSession.delete({
+    where: {
+      id: userSession.id
+    }
+  });
+
+  return refreshToken;
+};
+
 export const generateOTPToken = (user: User): string => {
   const token = jwt.sign({ userId: user.id }, process.env.OTP_TOKEN_SECRET as string, {
     expiresIn: 15 * 60
@@ -204,6 +231,68 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
   });
 
   return user;
+};
+
+export const generateUserAccessToken = async (userId: number): Promise<string> => {
+  const userRoles = await prisma.userRole.findMany({
+    where: {
+      userId
+    },
+    select: {
+      roleId: true
+    }
+  });
+
+  const userRolesIds = userRoles?.map((userRole) => userRole?.roleId);
+
+  const rolePermissions = await prisma.rolePermission.findMany({
+    where: {
+      roleId: {
+        in: userRolesIds
+      }
+    },
+    include: {
+      permission: true
+    }
+  });
+
+  const userPermissions = rolePermissions?.map((rolePermission) => {
+    const { permission } = rolePermission || {};
+    const { resource, canCreate, canRead, canUpdate, canDelete } = permission || {};
+    return {
+      resource,
+      canCreate,
+      canRead,
+      canUpdate,
+      canDelete
+    };
+  });
+
+  const accessToken = jwt.sign(
+    { userId: userId, permissions: userPermissions },
+    process.env.ACCESS_TOKEN_SECRET as string,
+    {
+      expiresIn: 15 * 60
+    }
+  );
+
+  return accessToken;
+};
+
+export const generateUserRefreshToken = async (userId: number): Promise<string> => {
+  const refreshToken = jwt.sign({ userId: userId }, process.env.REFRESH_TOKEN_SECRET as string, {
+    expiresIn: 30 * 24 * 60 * 60
+  });
+
+  await prisma.userSession.create({
+    data: {
+      userId: userId,
+      refreshToken: refreshToken,
+      isRevoked: false
+    }
+  });
+
+  return refreshToken;
 };
 
 const sendEmail = async (user: User, otp: string) => {

@@ -3,11 +3,13 @@ import { asyncHandler } from '../middlewares/asyncHandler';
 import {
   canLoginUser,
   generateOTPToken,
+  generateUserAccessToken,
   getUserByEmail,
   getUserById,
   isOTPRequestTimeoutLimitReached,
   isUserExist,
   registerUser,
+  renewRefreshToken,
   resetPassword,
   sendOTPToUser
 } from '../services/auth';
@@ -155,7 +157,7 @@ export const verifyOTPController = asyncHandler(async (req, res, next) => {
         ?.cookie('refreshToken', otpResponse?.refreshToken, {
           expires: refreshTokenExpiryDateUTC,
           httpOnly: true,
-          secure: true
+          secure: process.env.NODE_ENV === 'production'
         })
         ?.status(200)
         ?.json({
@@ -308,6 +310,60 @@ export const resetPasswordController = asyncHandler(async (req, res) => {
       message: 'Password reset successfully!'
     }
   });
+});
+
+export const refreshTokenController = asyncHandler(async (req, res) => {
+  const refreshJwtToken = req?.cookies?.refreshToken;
+
+  if (!refreshJwtToken) {
+    throw Error('Something went wrong.');
+  }
+
+  let userId: number;
+
+  try {
+    const decodedToken = jwt.verify(
+      refreshJwtToken,
+      process.env.REFRESH_TOKEN_SECRET as string
+    ) as JwtPayload;
+
+    userId = decodedToken?.userId as any as number;
+  } catch (err) {
+    res.status(401).json({
+      success: false,
+      message: 'Session timed out.'
+    });
+
+    return;
+  }
+
+  const refreshToken = await renewRefreshToken(userId, refreshJwtToken);
+
+  if (!refreshToken) {
+    res.status(401).json({
+      success: false,
+      message: 'Session timed out.'
+    });
+
+    return;
+  }
+
+  const accessToken = await generateUserAccessToken(userId);
+
+  const refreshTokenExpiryTime = new Date()?.getTime() + 30 * 24 * 60 * 60 * 1000;
+  const refreshTokenExpiryDateUTC = new Date(refreshTokenExpiryTime);
+
+  res
+    ?.cookie('refreshToken', refreshToken, {
+      expires: refreshTokenExpiryDateUTC,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production'
+    })
+    ?.status(200)
+    ?.json({
+      success: true,
+      accessToken: accessToken
+    });
 });
 
 type OtpError = { isAuthenticationError: boolean; message: string };

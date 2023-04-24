@@ -10,17 +10,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Main Tables
+
 model User {
-  id        Int      @id @default(autoincrement())
-  role      Role     @relation(fields: [roleId], references: [id])
-  roleId    Int      @unique
-  tasks     Task[]
-  firstName String   @map("first_name")
-  lastName  String   @map("last_name")
-  password  String
-  email     String   @unique
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id           Int           @id @default(autoincrement())
+  firstName    String        @map("first_name")
+  lastName     String        @map("last_name")
+  password     String
+  email        String        @unique
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamp()
+  updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamp()
+  userOtp      UserOtp?
+  tasks        Task[]
+  userSessions UserSession[]
+  userRoles    UserRole[]
 
   @@map("users")
 }
@@ -28,22 +31,88 @@ model User {
 model Task {
   id          Int       @id @default(autoincrement())
   user        User      @relation(fields: [userId], references: [id])
-  userId      Int
+  userId      Int       @map("user_id")
   description String?
-  startTime   DateTime  @map("start_time") @db.Timestamptz(3)
-  endTime     DateTime? @map("end_time") @db.Timestamptz(3)
+  startTime   DateTime  @map("start_time") @db.Timestamp()
+  endTime     DateTime? @map("end_time") @db.Timestamp()
   isDeleted   Boolean   @default(false) @map("is_deleted")
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp()
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamp()
 
   @@map("tasks")
 }
 
+// Session and Token Tables
+
+model UserOtp {
+  id                    Int       @id @default(autoincrement())
+  user                  User      @relation(fields: [userId], references: [id])
+  userId                Int       @unique @map("user_id")
+  otp                   String
+  otpRequest            Int       @map("otp_request")
+  otpAttempt            Int?      @map("otp_attempt")
+  otpRequestTimeoutDate DateTime? @map("otp_request_timeout_date") @db.Timestamp()
+  lockoutDate           DateTime? @map("lockout_date") @db.Timestamp()
+  expiryDate            DateTime  @map("expiry_date") @db.Timestamp()
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamp()
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamp()
+
+  @@map("user_otp")
+}
+
+model UserSession {
+  id           Int      @id @default(autoincrement())
+  user         User     @relation(fields: [userId], references: [id])
+  userId       Int      @map("user_id")
+  refreshToken String   @map("refresh_token")
+  isRevoked    Boolean  @map("is_revoked")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp()
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamp()
+
+  @@map("user_sessions")
+}
+
+// RBAC Tables
+
 model Role {
-  id        Int      @id @default(autoincrement())
-  roleName  String   @map("role_name")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  user      User?
+  id              Int              @id @default(autoincrement())
+  roleName        String           @map("role_name")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamp()
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
 
   @@map("roles")
+}
+
+model UserRole {
+  id     Int  @id @default(autoincrement())
+  user   User @relation(fields: [userId], references: [id])
+  userId Int  @map("user_id")
+  role   Role @relation(fields: [roleId], references: [id])
+  roleId Int  @map("role_id")
+
+  @@map("user_roles")
+}
+
+model Permission {
+  id              Int              @id @default(autoincrement())
+  resource        String
+  canCreate       Boolean          @default(false) @map("can_create")
+  canRead         Boolean          @default(false) @map("can_read")
+  canUpdate       Boolean          @default(false) @map("can_update")
+  canDelete       Boolean          @default(false) @map("can_delete")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamp()
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           Int        @id @default(autoincrement())
+  role         Role       @relation(fields: [roleId], references: [id])
+  roleId       Int        @map("role_id")
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  permissionId Int        @map("permission_id")
+
+  @@map("role_permissions")
 }

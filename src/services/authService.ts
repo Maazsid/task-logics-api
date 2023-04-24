@@ -275,17 +275,29 @@ export const generateUserAccessToken = async (userId: number): Promise<string> =
     }
   });
 
-  const userPermissions = rolePermissions?.map((rolePermission) => {
-    const { permission } = rolePermission || {};
+  const userPermissions = rolePermissions?.reduce((acc: Array<string>, curr) => {
+    const { permission } = curr || {};
     const { resource, canCreate, canRead, canUpdate, canDelete } = permission || {};
-    return {
-      resource,
-      canCreate,
-      canRead,
-      canUpdate,
-      canDelete
-    };
-  });
+
+    if (canCreate) {
+      const userPermission = `${resource}CanCreate`;
+      acc.push(userPermission);
+    }
+    if (canRead) {
+      const userPermission = `${resource}CanRead`;
+      acc.push(userPermission);
+    }
+    if (canUpdate) {
+      const userPermission = `${resource}CanUpdate`;
+      acc.push(userPermission);
+    }
+    if (canDelete) {
+      const userPermission = `${resource}CanDelete`;
+      acc.push(userPermission);
+    }
+
+    return acc;
+  }, []);
 
   const accessToken = jwt.sign(
     { userId: userId, permissions: userPermissions },

@@ -173,7 +173,9 @@ export const sendOTPToUser = async (user: User) => {
     });
   }
 
-  await sendEmail(user, otp);
+  if (process.env.SEND_GRID_ENABLED === 'true') {
+    await sendEmail(user, otp);
+  }
 };
 
 export const renewRefreshToken = async (userId: number, refreshJwtToken: string): Promise<string | null> => {

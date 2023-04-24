@@ -4,7 +4,7 @@ import { VerifyOtpReq } from '../../interfaces/auth/verifyOtpReq.model';
 import prisma from '../db/client';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { VerificationTypeEnum } from '../../constants/authEnum';
-import { generateUserAccessToken, generateUserRefreshToken } from '../../services/auth';
+import { generateUserAccessToken, generateUserRefreshToken } from '../../services/authService';
 
 export const otpStragety = new Strategy(
   { usernameField: 'otp', passwordField: 'otp', passReqToCallback: true },
@@ -146,9 +146,3 @@ export const otpStragety = new Strategy(
     }
   }
 );
-
-declare module 'jsonwebtoken' {
-  export interface JwtPayload {
-    userId: string;
-  }
-}

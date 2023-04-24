@@ -205,6 +205,23 @@ export const renewRefreshToken = async (userId: number, refreshJwtToken: string)
   return refreshToken;
 };
 
+export const logoutUser = async (userId: number, refreshJwtToken: string) => {
+  const userSession = await prisma.userSession.findFirst({
+    where: {
+      userId: userId,
+      refreshToken: refreshJwtToken
+    }
+  });
+
+  if (!userSession) throw Error('User session does not exist.');
+
+  await prisma.userSession.delete({
+    where: {
+      id: userSession.id
+    }
+  });
+};
+
 export const generateOTPToken = (user: User): string => {
   const token = jwt.sign({ userId: user.id }, process.env.OTP_TOKEN_SECRET as string, {
     expiresIn: 15 * 60

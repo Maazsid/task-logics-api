@@ -8,11 +8,12 @@ import {
   getUserById,
   isOTPRequestTimeoutLimitReached,
   isUserExist,
+  logoutUser,
   registerUser,
   renewRefreshToken,
   resetPassword,
   sendOTPToUser
-} from '../services/auth';
+} from '../services/authService';
 import {
   forgotPasswordValidator,
   loginValidator,
@@ -364,6 +365,23 @@ export const refreshTokenController = asyncHandler(async (req, res) => {
       success: true,
       accessToken: accessToken
     });
+});
+
+export const logoutController = asyncHandler(async (req, res) => {
+  const refreshJwtToken = req?.cookies?.refreshToken;
+
+  if (!refreshJwtToken) {
+    throw Error('Something went wrong.');
+  }
+
+  const userId = req.decodedToken.userId;
+
+  await logoutUser(userId, refreshJwtToken);
+
+  res.status(200).json({
+    success: true,
+    message: 'Logged out successfully!'
+  });
 });
 
 type OtpError = { isAuthenticationError: boolean; message: string };

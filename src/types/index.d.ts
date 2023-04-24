@@ -4,13 +4,13 @@ declare global {
   namespace Express {
     interface Request {
       decodedToken: {
-        userId: string;
+        userId: number;
       };
     }
   }
 }
 declare module 'jsonwebtoken' {
   export interface JwtPayload {
-    userId: string;
+    userId: number;
   }
 }

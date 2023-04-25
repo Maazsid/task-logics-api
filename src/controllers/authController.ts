@@ -26,6 +26,8 @@ import { LoginReq } from '../interfaces/auth/loginReq.model';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { ForgotPasswordReq } from '../interfaces/auth/forgotPasswordReq.model';
 import { ResetPasswordReq } from '../interfaces/auth/resetPasswordReq.model';
+import { ResponseStatusEnum } from '../constants/responseStatusEnum';
+import { createResponseBody } from '../utils/utils';
 
 export const loginController = asyncHandler(async (req, res) => {
   req.body = {
@@ -44,51 +46,42 @@ export const loginController = asyncHandler(async (req, res) => {
       }
     });
   } catch (err: any) {
-    res.status(400).json({
-      success: false,
-      error: err?.message || 'Something went wrong.'
-    });
+    res
+      .status(400)
+      .json(createResponseBody(ResponseStatusEnum.Fail, null, err?.message || 'Something went wrong.'));
 
     return;
   }
 
   const { areCredentialsCorrect, user } = await canLoginUser(body);
 
-  if (!areCredentialsCorrect) {
-    res.status(400).json({
-      success: false,
-      error: 'Incorrect credentials.'
-    });
+  if (!areCredentialsCorrect || !user) {
+    res.status(400).json(createResponseBody(ResponseStatusEnum.Fail, null, ['Incorrect credentials.']));
 
     return;
   }
 
-  if (user) {
-    const { isOTPRequestLimitReached, message } = await isOTPRequestTimeoutLimitReached(user);
+  const { isOTPRequestLimitReached, message } = await isOTPRequestTimeoutLimitReached(user);
 
-    if (isOTPRequestLimitReached) {
-      res.status(400).json({
-        success: false,
-        message
-      });
+  if (isOTPRequestLimitReached) {
+    res.status(400).json(createResponseBody(ResponseStatusEnum.Fail, null, [message]));
 
-      return;
-    }
-
-    await sendOTPToUser(user);
-
-    const otpJwtToken = generateOTPToken(user);
-
-    res.status(200).json({
-      success: true,
-      data: {
-        message: '',
-        result: {
-          otpToken: otpJwtToken
-        }
-      }
-    });
+    return;
   }
+
+  await sendOTPToUser(user);
+
+  const otpJwtToken = generateOTPToken(user);
+
+  const responseData = {
+    otpToken: otpJwtToken
+  };
+
+  res
+    .status(200)
+    .json(createResponseBody(ResponseStatusEnum.Success, responseData, ['OTP sent successfully!']));
+
+  return;
 });
 
 export const registerController = asyncHandler(async (req, res) => {
@@ -110,10 +103,9 @@ export const registerController = asyncHandler(async (req, res) => {
       }
     });
   } catch (err: any) {
-    res.status(400).json({
-      success: false,
-      error: err?.message || 'Something went wrong.'
-    });
+    res
+      .status(400)
+      .json(createResponseBody(ResponseStatusEnum.Fail, null, [err?.message || 'Something went wrong.']));
 
     return;
   }
@@ -121,12 +113,9 @@ export const registerController = asyncHandler(async (req, res) => {
   const isUserAlreadyExist = await isUserExist(body?.email);
 
   if (isUserAlreadyExist) {
-    res.status(400).json({
-      success: false,
-      data: {
-        message: 'User with email already exist.'
-      }
-    });
+    res
+      .status(400)
+      .json(createResponseBody(ResponseStatusEnum.Fail, null, ['User with email already exist.']));
 
     return;
   }
@@ -137,15 +126,15 @@ export const registerController = asyncHandler(async (req, res) => {
 
   const otpJwtToken = generateOTPToken(user);
 
-  res.status(200).json({
-    success: true,
-    data: {
-      message: 'User registered successfully!',
-      result: {
-        otpToken: otpJwtToken
-      }
-    }
-  });
+  const responseData = {
+    otpToken: otpJwtToken
+  };
+
+  res
+    .status(200)
+    .json(createResponseBody(ResponseStatusEnum.Success, responseData, ['User registered successfully!']));
+
+  return;
 });
 
 export const verifyOTPController = asyncHandler(async (req, res, next) => {
@@ -154,6 +143,10 @@ export const verifyOTPController = asyncHandler(async (req, res, next) => {
       const refreshTokenExpiryTime = new Date()?.getTime() + 30 * 24 * 60 * 60 * 1000;
       const refreshTokenExpiryDateUTC = new Date(refreshTokenExpiryTime);
 
+      const responseData = {
+        accessToken: otpResponse?.accessToken
+      };
+
       res
         ?.cookie('refreshToken', otpResponse?.refreshToken, {
           expires: refreshTokenExpiryDateUTC,
@@ -161,35 +154,27 @@ export const verifyOTPController = asyncHandler(async (req, res, next) => {
           secure: process.env.NODE_ENV === 'production'
         })
         ?.status(200)
-        ?.json({
-          success: true,
-          accessToken: otpResponse?.accessToken
-        });
+        ?.json(createResponseBody(ResponseStatusEnum.Success, responseData, ['']));
 
       return;
     } else if (otpResponse?.verificationType === VerificationTypeEnum.ForgotPassword) {
-      res.status(200).json({
-        success: true,
+      const responseData = {
         resetPasswordToken: otpResponse?.resetPasswordToken
-      });
+      };
+
+      res.status(200).json(createResponseBody(ResponseStatusEnum.Success, responseData, ['']));
 
       return;
     }
 
     if (info) {
-      res.status(400).json({
-        success: false,
-        message: 'OTP is required.'
-      });
+      res.status(400).json(createResponseBody(ResponseStatusEnum.Fail, null, ['OTP is required.']));
 
       return;
     }
 
     if (err?.isAuthenticationError) {
-      res.status(400).json({
-        success: false,
-        message: err?.message
-      });
+      res.status(400).json(createResponseBody(ResponseStatusEnum.Fail, null, [err?.message]));
 
       return;
     } else {
@@ -214,20 +199,16 @@ export const resendOTPController = asyncHandler(async (req, res) => {
   const { isOTPRequestLimitReached, message } = await isOTPRequestTimeoutLimitReached(user);
 
   if (isOTPRequestLimitReached) {
-    res.status(400).json({
-      success: false,
-      message
-    });
+    res.status(400).json(createResponseBody(ResponseStatusEnum.Fail, null, [message]));
 
     return;
   }
 
   await sendOTPToUser(user);
 
-  res.status(200).json({
-    success: true,
-    message: 'OTP sent successfully!'
-  });
+  res.status(200).json(createResponseBody(ResponseStatusEnum.Success, null, ['OTP sent successfully!']));
+
+  return;
 });
 
 export const forgotPasswordController = asyncHandler(async (req, res) => {
@@ -247,10 +228,9 @@ export const forgotPasswordController = asyncHandler(async (req, res) => {
       }
     });
   } catch (err: any) {
-    res.status(400).json({
-      success: false,
-      error: err?.message || 'Something went wrong.'
-    });
+    res
+      .status(400)
+      .json(createResponseBody(ResponseStatusEnum.Fail, null, [err?.message || 'Something went wrong.']));
 
     return;
   }
@@ -258,10 +238,7 @@ export const forgotPasswordController = asyncHandler(async (req, res) => {
   const user = await getUserByEmail(body?.email);
 
   if (!user) {
-    res.status(400).json({
-      success: false,
-      error: 'Incorrect credentials'
-    });
+    res.status(400).json(createResponseBody(ResponseStatusEnum.Fail, null, ['Incorrect credentials']));
 
     return;
   }
@@ -270,15 +247,13 @@ export const forgotPasswordController = asyncHandler(async (req, res) => {
 
   const otpJwtToken = generateOTPToken(user);
 
-  res.status(200).json({
-    success: true,
-    data: {
-      message: '',
-      result: {
-        otpToken: otpJwtToken
-      }
-    }
-  });
+  const responseData = {
+    otpToken: otpJwtToken
+  };
+
+  res
+    .status(200)
+    .json(createResponseBody(ResponseStatusEnum.Success, responseData, ['OTP sent successfully!']));
 });
 
 export const resetPasswordController = asyncHandler(async (req, res) => {
@@ -293,10 +268,9 @@ export const resetPasswordController = asyncHandler(async (req, res) => {
       }
     });
   } catch (err: any) {
-    res.status(400).json({
-      success: false,
-      error: err?.message || 'Something went wrong.'
-    });
+    res
+      .status(400)
+      .json(createResponseBody(ResponseStatusEnum.Fail, null, [err?.message || 'Something went wrong.']));
 
     return;
   }
@@ -305,12 +279,11 @@ export const resetPasswordController = asyncHandler(async (req, res) => {
 
   await resetPassword(body, resetPasswordJwtToken);
 
-  res.status(200).json({
-    success: true,
-    data: {
-      message: 'Password reset successfully!'
-    }
-  });
+  res
+    .status(200)
+    .json(createResponseBody(ResponseStatusEnum.Success, null, ['Password reset successfully!']));
+
+  return;
 });
 
 export const refreshTokenController = asyncHandler(async (req, res) => {
@@ -330,10 +303,7 @@ export const refreshTokenController = asyncHandler(async (req, res) => {
 
     userId = decodedToken?.userId as any as number;
   } catch (err) {
-    res.status(401).json({
-      success: false,
-      message: 'Session timed out.'
-    });
+    res.status(401).json(createResponseBody(ResponseStatusEnum.Fail, null, ['Session timed out.']));
 
     return;
   }
@@ -341,10 +311,7 @@ export const refreshTokenController = asyncHandler(async (req, res) => {
   const refreshToken = await renewRefreshToken(userId, refreshJwtToken);
 
   if (!refreshToken) {
-    res.status(401).json({
-      success: false,
-      message: 'Session timed out.'
-    });
+    res.status(401).json(createResponseBody(ResponseStatusEnum.Fail, null, ['Session timed out.']));
 
     return;
   }
@@ -354,6 +321,10 @@ export const refreshTokenController = asyncHandler(async (req, res) => {
   const refreshTokenExpiryTime = new Date()?.getTime() + 30 * 24 * 60 * 60 * 1000;
   const refreshTokenExpiryDateUTC = new Date(refreshTokenExpiryTime);
 
+  const responseData = {
+    accessToken: accessToken
+  };
+
   res
     ?.cookie('refreshToken', refreshToken, {
       expires: refreshTokenExpiryDateUTC,
@@ -361,10 +332,7 @@ export const refreshTokenController = asyncHandler(async (req, res) => {
       secure: process.env.NODE_ENV === 'production'
     })
     ?.status(200)
-    ?.json({
-      success: true,
-      accessToken: accessToken
-    });
+    ?.json(createResponseBody(ResponseStatusEnum.Success, responseData, ['']));
 });
 
 export const logoutController = asyncHandler(async (req, res) => {
@@ -378,10 +346,7 @@ export const logoutController = asyncHandler(async (req, res) => {
 
   await logoutUser(userId, refreshJwtToken);
 
-  res.status(200).json({
-    success: true,
-    message: 'Logged out successfully!'
-  });
+  res.status(200).json(createResponseBody(ResponseStatusEnum.Success, null, ['Logged out successfully!']));
 });
 
 type OtpError = { isAuthenticationError: boolean; message: string };

@@ -6,7 +6,7 @@ declare global {
     interface Request {
       decodedToken: {
         userId: number;
-        permissions: Array<UserPermissions>
+        permissions: Array<UserPermissions>;
       };
     }
   }
@@ -14,6 +14,6 @@ declare global {
 declare module 'jsonwebtoken' {
   export interface JwtPayload {
     userId: number;
-    permissions: Array<UserPermissions>
+    permissions: Array<UserPermissions>;
   }
 }

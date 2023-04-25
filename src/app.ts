@@ -7,14 +7,19 @@ import { otpStragety } from './utils/passport-strageties/otpStragety';
 import cookieParser from 'cookie-parser';
 import swaggerDocument from './swagger/swagger-output.json';
 import swaggerUi from 'swagger-ui-express';
+import helmet from 'helmet';
 
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 const app = express();
 
+app.disable('x-powered-by');
+
 app.use(express.json());
 app.use(cookieParser());
+
+app.use(helmet());
 
 passport.use('otpStragety', otpStragety);
 

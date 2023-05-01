@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import express from 'express';
-import { errorHandler } from './middlewares/errorHandler';
+import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
 import passport from 'passport';
 import { otpStragety } from './utils/passport-strageties/otpStragety';
 import cookieParser from 'cookie-parser';
@@ -30,6 +30,8 @@ if (process.env.NODE_ENV === 'development') {
 app.use('/', routes);
 
 app.use(errorHandler);
+
+app.use(notFoundHandler);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

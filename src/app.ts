@@ -1,13 +1,13 @@
 import dotenv from 'dotenv';
 import express from 'express';
 import { errorHandler } from './middlewares/errorHandler';
-import authRoute from './routes/authRoute';
 import passport from 'passport';
 import { otpStragety } from './utils/passport-strageties/otpStragety';
 import cookieParser from 'cookie-parser';
 import swaggerDocument from './swagger/swagger-output.json';
 import swaggerUi from 'swagger-ui-express';
 import helmet from 'helmet';
+import routes from './routes/index';
 
 dotenv.config();
 
@@ -27,7 +27,7 @@ if (process.env.NODE_ENV === 'development') {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 }
 
-app.use('/api/auth', authRoute);
+app.use('/', routes);
 
 app.use(errorHandler);
 

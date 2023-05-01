@@ -28,6 +28,7 @@ import { ForgotPasswordReq } from '../interfaces/auth/forgotPasswordReq.model';
 import { ResetPasswordReq } from '../interfaces/auth/resetPasswordReq.model';
 import { ResponseStatusEnum } from '../constants/responseStatusEnum';
 import { createResponseBody } from '../utils/utils';
+import { JoiErrorConfig } from '../constants/joi.const';
 
 export const loginController = asyncHandler(async (req, res) => {
   req.body = {
@@ -38,13 +39,7 @@ export const loginController = asyncHandler(async (req, res) => {
   const body: LoginReq = req.body;
 
   try {
-    await loginValidator.validateAsync(body, {
-      errors: {
-        wrap: {
-          label: false
-        }
-      }
-    });
+    await loginValidator.validateAsync(body, JoiErrorConfig);
   } catch (err: any) {
     res
       .status(400)
@@ -95,13 +90,7 @@ export const registerController = asyncHandler(async (req, res) => {
   const body: RegistrationReq = req.body;
 
   try {
-    await registerValidator.validateAsync(body, {
-      errors: {
-        wrap: {
-          label: false
-        }
-      }
-    });
+    await registerValidator.validateAsync(body, JoiErrorConfig);
   } catch (err: any) {
     res
       .status(400)
@@ -220,13 +209,7 @@ export const forgotPasswordController = asyncHandler(async (req, res) => {
   const body: ForgotPasswordReq = req.body;
 
   try {
-    await forgotPasswordValidator.validateAsync(body, {
-      errors: {
-        wrap: {
-          label: false
-        }
-      }
-    });
+    await forgotPasswordValidator.validateAsync(body, JoiErrorConfig);
   } catch (err: any) {
     res
       .status(400)
@@ -260,13 +243,7 @@ export const resetPasswordController = asyncHandler(async (req, res) => {
   const body: ResetPasswordReq = req.body;
 
   try {
-    await resetPasswordValidator.validateAsync(body, {
-      errors: {
-        wrap: {
-          label: false
-        }
-      }
-    });
+    await resetPasswordValidator.validateAsync(body, JoiErrorConfig);
   } catch (err: any) {
     res
       .status(400)

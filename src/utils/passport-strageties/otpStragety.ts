@@ -5,6 +5,7 @@ import prisma from '../db/client';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { VerificationTypeEnum } from '../../constants/authEnum';
 import { generateUserAccessToken, generateUserRefreshToken } from '../../services/authService';
+import { JoiErrorConfig } from '../../constants/joi.const';
 
 export const otpStragety = new Strategy(
   { usernameField: 'otp', passwordField: 'otp', passReqToCallback: true },
@@ -29,13 +30,7 @@ export const otpStragety = new Strategy(
       const body: VerifyOtpReq = req.body;
 
       try {
-        await otpValidator.validateAsync(body, {
-          errors: {
-            wrap: {
-              label: false
-            }
-          }
-        });
+        await otpValidator.validateAsync(body, JoiErrorConfig);
       } catch (err: any) {
         done({
           isAuthenticationError: true,

@@ -1,5 +1,5 @@
-import * as jwt from 'jsonwebtoken';
 import { UserPermissions } from '../constants/permissionsEnum';
+import { ParsedQueryParams } from '../interfaces/models/parsed-query-params.model';
 
 declare global {
   namespace Express {
@@ -8,6 +8,7 @@ declare global {
         userId: number;
         permissions: Array<UserPermissions>;
       };
+      parsedQueryParams?: ParsedQueryParams;
     }
   }
 }

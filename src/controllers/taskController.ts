@@ -3,9 +3,21 @@ import { ResponseStatusEnum } from '../constants/responseStatusEnum';
 import { AddTaskReq } from '../interfaces/task/add-task-req.model';
 import { UpdateTaskReq } from '../interfaces/task/update-task-req.model';
 import { asyncHandler } from '../middlewares/asyncHandler';
-import { addTask, updateTask } from '../services/taskService';
+import { addTask, getTasks, updateTask } from '../services/taskService';
 import { createResponseBody } from '../utils/utils';
 import { addTaskValidator, updateTaskValidator } from '../validators/task.validator';
+
+export const getTasksController = asyncHandler(async (req, res) => {
+  if (!req.parsedQueryParams) throw Error('Query params cannot be empty');
+
+  const { userId } = req.decodedToken || {};
+
+  const tasks = await getTasks(req.parsedQueryParams, userId);
+
+  res.status(200).json(createResponseBody(ResponseStatusEnum.Success, tasks, ['']));
+
+  return;
+});
 
 export const addTaskController = asyncHandler(async (req, res) => {
   const body: AddTaskReq = req.body;

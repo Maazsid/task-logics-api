@@ -59,3 +59,16 @@ export const updateTask = async (body: UpdateTaskReq, taskId: number): Promise<T
 
   return updatedTask;
 };
+
+export const deleteTask = async (taskId: number) => {
+  const deletedTask = await prisma.task.update({
+    where: {
+      id: taskId
+    },
+    data: {
+      isDeleted: true
+    }
+  });
+
+  return deletedTask;
+};

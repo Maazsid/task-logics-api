@@ -3,7 +3,7 @@ import { ResponseStatusEnum } from '../constants/responseStatusEnum';
 import { AddTaskReq } from '../interfaces/task/add-task-req.model';
 import { UpdateTaskReq } from '../interfaces/task/update-task-req.model';
 import { asyncHandler } from '../middlewares/asyncHandler';
-import { addTask, getTasks, updateTask } from '../services/taskService';
+import { addTask, deleteTask, getTasks, updateTask } from '../services/taskService';
 import { createResponseBody } from '../utils/utils';
 import { addTaskValidator, updateTaskValidator } from '../validators/task.validator';
 
@@ -63,6 +63,16 @@ export const updateTaskController = asyncHandler(async (req, res) => {
   res
     .status(200)
     .json(createResponseBody(ResponseStatusEnum.Success, updatedTask, ['Task updated successfully!']));
+
+  return;
+});
+
+export const deleteTaskController = asyncHandler(async (req, res) => {
+  const taskId = parseInt(req.params.taskId);
+
+  await deleteTask(taskId);
+
+  res.status(200).json(createResponseBody(ResponseStatusEnum.Success, null, ['Task deleted successfully!']));
 
   return;
 });

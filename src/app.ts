@@ -8,6 +8,7 @@ import swaggerDocument from './swagger/swagger-output.json';
 import swaggerUi from 'swagger-ui-express';
 import helmet from 'helmet';
 import routes from './routes/index';
+import cors from 'cors';
 
 dotenv.config();
 
@@ -18,6 +19,14 @@ app.disable('x-powered-by');
 
 app.use(express.json());
 app.use(cookieParser());
+
+if (process.env.NODE_ENV === 'development') {
+  app.use(
+    cors({
+      origin: 'http://localhost:4200'
+    })
+  );
+}
 
 app.use(helmet());
 

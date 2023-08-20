@@ -27,7 +27,7 @@ export const addTaskController = asyncHandler(async (req, res) => {
   } catch (err: any) {
     res
       .status(400)
-      .json(createResponseBody(ResponseStatusEnum.Fail, null, err?.message || 'Something went wrong.'));
+      .json(createResponseBody(ResponseStatusEnum.Fail, null, [err?.message || 'Something went wrong.']));
 
     return;
   }
@@ -51,7 +51,7 @@ export const updateTaskController = asyncHandler(async (req, res) => {
   } catch (err: any) {
     res
       .status(400)
-      .json(createResponseBody(ResponseStatusEnum.Fail, null, err?.message || 'Something went wrong.'));
+      .json(createResponseBody(ResponseStatusEnum.Fail, null, [err?.message || 'Something went wrong.']));
 
     return;
   }

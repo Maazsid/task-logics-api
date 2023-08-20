@@ -19,7 +19,7 @@ export const queryParamsHandler = async (req: Request, res: Response, next: Next
   } catch (err: any) {
     res
       .status(400)
-      .json(createResponseBody(ResponseStatusEnum.Fail, null, err?.message || 'Something went wrong.'));
+      .json(createResponseBody(ResponseStatusEnum.Fail, null, [err?.message || 'Something went wrong.']));
 
     return;
   }

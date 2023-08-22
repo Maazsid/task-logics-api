@@ -8,11 +8,9 @@ import { createResponseBody } from '../utils/utils';
 import { addTaskValidator, updateTaskValidator } from '../validators/task.validator';
 
 export const getTasksController = asyncHandler(async (req, res) => {
-  if (!req.parsedQueryParams) throw Error('Query params cannot be empty');
-
   const { userId } = req.decodedToken || {};
 
-  const tasks = await getTasks(req.parsedQueryParams, userId);
+  const tasks = await getTasks(userId);
 
   res.status(200).json(createResponseBody(ResponseStatusEnum.Success, tasks, ['']));
 

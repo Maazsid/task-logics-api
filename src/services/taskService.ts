@@ -20,7 +20,7 @@ export const getTasks = async (queryParams: ParsedQueryParams, userId: number): 
       isDeleted: false
     },
     orderBy: {
-      createdAt: 'desc'
+      startTime: 'desc'
     },
     select: {
       id: true,

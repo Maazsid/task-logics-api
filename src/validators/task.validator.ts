@@ -8,5 +8,5 @@ export const addTaskValidator = Joi.object({
 export const updateTaskValidator = Joi.object({
   description: Joi.string().allow('').max(30000),
   startTime: Joi.string(),
-  endTime: Joi.string()
+  endTime: Joi.string().allow(null)
 });

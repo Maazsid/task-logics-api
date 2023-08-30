@@ -1,4 +1,4 @@
-import { UserPermissions } from '../constants/permissionsEnum';
+import { UserPermissions } from '../constants/auth/permissionsEnum';
 import { ResponseStatusEnum } from '../constants/responseStatusEnum';
 import { createResponseBody } from '../utils/utils';
 import { asyncHandler } from './asyncHandler';

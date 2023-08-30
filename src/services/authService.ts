@@ -1,6 +1,6 @@
 import { RegistrationReq } from '../interfaces/auth/registrationReq.model';
-import { BcryptEnum } from '../constants/bcryptEnum';
-import { RoleEnum } from '../constants/rolesEnum';
+import { BcryptEnum } from '../constants/auth/bcryptEnum';
+import { RoleEnum } from '../constants/auth/rolesEnum';
 import { Role, User } from '@prisma/client';
 import prisma from '../utils/db/client';
 import bcrypt from 'bcrypt';

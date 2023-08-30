@@ -6,7 +6,7 @@ import {
   updateTaskController
 } from '../controllers/taskController';
 import { isAuthorized } from '../middlewares/authMiddleware';
-import { UserPermissions } from '../constants/permissionsEnum';
+import { UserPermissions } from '../constants/auth/permissionsEnum';
 
 const router: Router = express.Router();
 

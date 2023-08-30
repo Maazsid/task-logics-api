@@ -1,4 +1,4 @@
-import { UserPermissions } from '../constants/permissionsEnum';
+import { UserPermissions } from '../constants/auth/permissionsEnum';
 import { ParsedQueryParams } from '../interfaces/models/parsed-query-params.model';
 
 declare global {

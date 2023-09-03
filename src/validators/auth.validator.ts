@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { VerificationTypeEnum } from '../constants/authEnum';
+import { VerificationTypeEnum } from '../constants/auth/verificationTypeEnum';
 
 /* 
   Password Validation

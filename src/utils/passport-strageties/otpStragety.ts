@@ -3,7 +3,7 @@ import { otpValidator } from '../../validators/auth.validator';
 import { VerifyOtpReq } from '../../interfaces/auth/verifyOtpReq.model';
 import prisma from '../db/client';
 import jwt, { JwtPayload } from 'jsonwebtoken';
-import { VerificationTypeEnum } from '../../constants/authEnum';
+import { VerificationTypeEnum } from '../../constants/auth/verificationTypeEnum';
 import { generateUserAccessToken, generateUserRefreshToken } from '../../services/authService';
 import { JoiErrorConfig } from '../../constants/joi.const';
 

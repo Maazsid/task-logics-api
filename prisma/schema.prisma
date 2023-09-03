@@ -13,17 +13,18 @@ datasource db {
 // Main Tables
 
 model User {
-  id           Int           @id @default(autoincrement())
-  firstName    String        @map("first_name")
-  lastName     String        @map("last_name")
-  password     String
-  email        String        @unique
-  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamp()
-  updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamp()
-  userOtp      UserOtp?
-  tasks        Task[]
-  userSessions UserSession[]
-  userRoles    UserRole[]
+  id                Int                @id @default(autoincrement())
+  firstName         String             @map("first_name")
+  lastName          String             @map("last_name")
+  password          String
+  email             String             @unique
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamp()
+  updatedAt         DateTime           @updatedAt @map("updated_at") @db.Timestamp()
+  userOtp           UserOtp?
+  tasks             Task[]
+  userSessions      UserSession[]
+  userRoles         UserRole[]
+  userRegistrations UserRegistration[]
 
   @@map("users")
 }
@@ -70,6 +71,17 @@ model UserSession {
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamp()
 
   @@map("user_sessions")
+}
+
+model UserRegistration {
+  id               Int      @id @default(autoincrement())
+  user             User     @relation(fields: [userId], references: [id])
+  userId           Int      @map("user_id")
+  registrationType String   @map("registration_type")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamp()
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamp()
+
+  @@map("user_registrations")
 }
 
 // RBAC Tables

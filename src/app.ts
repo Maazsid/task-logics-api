@@ -9,6 +9,7 @@ import swaggerUi from 'swagger-ui-express';
 import helmet from 'helmet';
 import routes from './routes/index';
 import cors from 'cors';
+import { googleStragety } from './utils/passport-strageties/googleStragety';
 
 dotenv.config();
 
@@ -32,6 +33,8 @@ if (process.env.NODE_ENV === 'development') {
 app.use(helmet());
 
 passport.use('otpStragety', otpStragety);
+
+passport.use('googleStragety', googleStragety);
 
 if (process.env.NODE_ENV === 'development') {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));

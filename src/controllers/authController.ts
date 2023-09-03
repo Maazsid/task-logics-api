@@ -21,7 +21,7 @@ import {
   resetPasswordValidator
 } from '../validators/auth.validator';
 import passport from 'passport';
-import { VerificationTypeEnum } from '../constants/authEnum';
+import { VerificationTypeEnum } from '../constants/auth/verificationTypeEnum';
 import { LoginReq } from '../interfaces/auth/loginReq.model';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { ForgotPasswordReq } from '../interfaces/auth/forgotPasswordReq.model';
@@ -29,6 +29,8 @@ import { ResetPasswordReq } from '../interfaces/auth/resetPasswordReq.model';
 import { ResponseStatusEnum } from '../constants/responseStatusEnum';
 import { createResponseBody } from '../utils/utils';
 import { JoiErrorConfig } from '../constants/joi.const';
+import { OtpError, OtpStragety } from '../utils/models/otp-stragety.model';
+import { GoogleStragety } from '../utils/models/google-stragety.model';
 
 export const loginController = asyncHandler(async (req, res) => {
   req.body = {
@@ -99,9 +101,9 @@ export const registerController = asyncHandler(async (req, res) => {
     return;
   }
 
-  const isUserAlreadyExist = await isUserExist(body?.email);
+  const { isUserAlreadyExist, isUserRegisteredWithEmail } = await isUserExist(body?.email);
 
-  if (isUserAlreadyExist) {
+  if (isUserAlreadyExist && isUserRegisteredWithEmail) {
     res
       .status(400)
       .json(createResponseBody(ResponseStatusEnum.Fail, null, ['User with email already exist.']));
@@ -109,7 +111,7 @@ export const registerController = asyncHandler(async (req, res) => {
     return;
   }
 
-  const user = await registerUser(body);
+  const user = await registerUser(body, isUserAlreadyExist, isUserRegisteredWithEmail);
 
   await sendOTPToUser(user);
 
@@ -127,7 +129,7 @@ export const registerController = asyncHandler(async (req, res) => {
 });
 
 export const verifyOTPController = asyncHandler(async (req, res, next) => {
-  passport.authenticate('otpStragety', (err: OtpError, otpResponse: OtpResponse, info: any) => {
+  passport.authenticate('otpStragety', (err: OtpError, otpResponse: OtpStragety, info: any) => {
     if (otpResponse?.verificationType === VerificationTypeEnum.Login) {
       const refreshTokenExpiryTime = new Date()?.getTime() + 30 * 24 * 60 * 60 * 1000;
       const refreshTokenExpiryDateUTC = new Date(refreshTokenExpiryTime);
@@ -326,11 +328,25 @@ export const logoutController = asyncHandler(async (req, res) => {
   res.status(200).json(createResponseBody(ResponseStatusEnum.Success, null, ['Logged out successfully!']));
 });
 
-type OtpError = { isAuthenticationError: boolean; message: string };
+export const googleOAuthController = asyncHandler(async (req, res, next) => {
+  passport.authenticate('googleStragety', (err: any, googleStragetyResponse: GoogleStragety) => {
+    const refreshTokenExpiryTime = new Date()?.getTime() + 30 * 24 * 60 * 60 * 1000;
+    const refreshTokenExpiryDateUTC = new Date(refreshTokenExpiryTime);
 
-type OtpResponse = {
-  verificationType: VerificationTypeEnum;
-  accessToken: string;
-  resetPasswordToken: string;
-  refreshToken: string;
-};
+    const { refreshToken } = googleStragetyResponse || {};
+
+    if (err) {
+      res?.redirect('http://localhost:4200/login');
+      return;
+    }
+
+    res
+      ?.cookie('refreshToken', refreshToken, {
+        expires: refreshTokenExpiryDateUTC,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production'
+      })
+      ?.redirect('http://localhost:4200/login');
+    return;
+  })(req, res, next);
+});

@@ -1,6 +1,6 @@
 import { RegistrationReq } from '../interfaces/auth/registrationReq.model';
-import { BcryptEnum } from '../constants/bcryptEnum';
-import { RoleEnum } from '../constants/rolesEnum';
+import { BcryptEnum } from '../constants/auth/bcryptEnum';
+import { RoleEnum } from '../constants/auth/rolesEnum';
 import { Role, User } from '@prisma/client';
 import prisma from '../utils/db/client';
 import bcrypt from 'bcrypt';
@@ -10,6 +10,7 @@ import { MailDataRequired } from '@sendgrid/helpers/classes/mail';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { LoginReq } from '../interfaces/auth/loginReq.model';
 import { ResetPasswordReq } from '../interfaces/auth/resetPasswordReq.model';
+import { RegistrationTypeEnum } from '../constants/auth/registrationType.enum';
 
 export const canLoginUser = async (
   body: LoginReq
@@ -29,8 +30,32 @@ export const canLoginUser = async (
   return { areCredentialsCorrect: true, user };
 };
 
-export const registerUser = async (body: RegistrationReq): Promise<User> => {
+export const registerUser = async (
+  body: RegistrationReq,
+  isUserAlreadyExist: boolean,
+  isUserRegisteredWithEmail: boolean
+): Promise<User> => {
   const hashedPassword = await bcrypt.hash(body?.password, BcryptEnum.SaltRounds);
+
+  if (isUserAlreadyExist && !isUserRegisteredWithEmail) {
+    const user = await prisma.user.update({
+      where: {
+        email: body?.email
+      },
+      data: {
+        password: hashedPassword,
+        userRegistrations: {
+          create: [
+            {
+              registrationType: RegistrationTypeEnum.Email
+            }
+          ]
+        }
+      }
+    });
+
+    return user;
+  }
 
   const role = (await prisma.role.findFirst({
     where: {
@@ -48,6 +73,13 @@ export const registerUser = async (body: RegistrationReq): Promise<User> => {
         create: [
           {
             roleId: role.id
+          }
+        ]
+      },
+      userRegistrations: {
+        create: [
+          {
+            registrationType: RegistrationTypeEnum.Email
           }
         ]
       }
@@ -81,15 +113,30 @@ export const resetPassword = async (body: ResetPasswordReq, resetPasswordJwtToke
   });
 };
 
-export const isUserExist = async (email: string): Promise<boolean> => {
+export const isUserExist = async (
+  email: string
+): Promise<{ isUserAlreadyExist: boolean; isUserRegisteredWithEmail: boolean }> => {
   const user = await prisma.user.findUnique({
     where: {
       email: email
+    },
+    include: {
+      userRegistrations: {
+        select: {
+          registrationType: true
+        }
+      }
     }
   });
 
-  if (user) return true;
-  return false;
+  const isUserRegisteredWithEmail = user?.userRegistrations?.some(
+    (u) => u?.registrationType === RegistrationTypeEnum.Email
+  );
+
+  return {
+    isUserAlreadyExist: !!user,
+    isUserRegisteredWithEmail: !!isUserRegisteredWithEmail
+  };
 };
 
 export const isOTPRequestTimeoutLimitReached = async (
@@ -246,8 +293,21 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
   const user = await prisma.user.findUnique({
     where: {
       email
+    },
+    include: {
+      userRegistrations: {
+        select: {
+          registrationType: true
+        }
+      }
     }
   });
+
+  const isRegisteredByEmail = user?.userRegistrations?.some(
+    (u) => u?.registrationType === RegistrationTypeEnum.Email
+  );
+
+  if (!isRegisteredByEmail) return null;
 
   return user;
 };

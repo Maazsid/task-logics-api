@@ -1,4 +1,4 @@
-import { VerificationTypeEnum } from '../../constants/authEnum';
+import { VerificationTypeEnum } from '../../constants/auth/verificationTypeEnum';
 
 export interface VerifyOtpReq {
   otp: string;

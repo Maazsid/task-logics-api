@@ -1,4 +1,4 @@
-import dotenv from 'dotenv';
+import './config';
 import express from 'express';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
 import passport from 'passport';
@@ -11,8 +11,6 @@ import routes from './routes/index';
 import cors from 'cors';
 import { googleStragety } from './utils/passport-strageties/googleStragety';
 
-dotenv.config();
-
 const PORT = process.env.PORT || 3000;
 const app = express();
 
@@ -24,7 +22,7 @@ app.use(cookieParser());
 if (process.env.NODE_ENV === 'development') {
   app.use(
     cors({
-      origin: 'http://localhost:4200',
+      origin: process.env.FRONTEND_URL,
       credentials: true
     })
   );

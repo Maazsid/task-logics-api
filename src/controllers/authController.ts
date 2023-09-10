@@ -336,7 +336,7 @@ export const googleOAuthController = asyncHandler(async (req, res, next) => {
     const { refreshToken } = googleStragetyResponse || {};
 
     if (err) {
-      res?.redirect('http://localhost:4200/login');
+      res?.redirect(`${process.env.FRONTEND_URL}/login`);
       return;
     }
 
@@ -346,7 +346,7 @@ export const googleOAuthController = asyncHandler(async (req, res, next) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production'
       })
-      ?.redirect('http://localhost:4200/login');
+      ?.redirect(`${process.env.FRONTEND_URL}/login`);
     return;
   })(req, res, next);
 });

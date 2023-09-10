@@ -32,7 +32,7 @@ To run the project locally:
 - To run the project in debug mode select `Debug Task Logics` in the debug configuration inside VSCode and then press F5.
 
 
-# Built With
+## Built With
 
 - Node.js, Express, Joi, Passport
 - Prisma, PostgreSQL
